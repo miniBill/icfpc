@@ -149,7 +149,47 @@ step icfp =
                     binary Int Int64.sub int int
 
                 Multiplication ->
-                    binary Int Int64.mul int int
+                    case int l of
+                        Just v ->
+                            case Int64.toInt53 v of
+                                Just 0 ->
+                                    Int v
+
+                                Just 1 ->
+                                    r
+
+                                Just i ->
+                                    if i == -1 then
+                                        Unary Negation r
+
+                                    else
+                                        binary Int Int64.mul int int
+
+                                _ ->
+                                    binary Int Int64.mul int int
+
+                        Nothing ->
+                            case int r of
+                                Just v ->
+                                    case Int64.toInt53 v of
+                                        Just 0 ->
+                                            Int v
+
+                                        Just 1 ->
+                                            l
+
+                                        Just i ->
+                                            if i == -1 then
+                                                Unary Negation l
+
+                                            else
+                                                binary Int Int64.mul int int
+
+                                        _ ->
+                                            binary Int Int64.mul int int
+
+                                Nothing ->
+                                    binary Int Int64.mul int int
 
                 Division ->
                     binary Int Int64.div int int

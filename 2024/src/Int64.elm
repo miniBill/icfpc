@@ -1,4 +1,4 @@
-module Int64 exposing (Int64, add, div, fromInt, fromString, lessThan, moreThan, mul, negate, remainderBy, sub, toInt53, toString, zero)
+module Int64 exposing (Int64, add, div, fromInt, fromString, isZero, lessThan, moreThan, mul, negate, remainderBy, sub, toInt53, toString, zero)
 
 import UInt64 exposing (UInt64)
 
@@ -94,7 +94,7 @@ compare ( ls, l ) ( rs, r ) =
 
 negate : Int64 -> Int64
 negate (( s, v ) as i) =
-    if UInt64.isZero v then
+    if isZero i then
         i
 
     else
@@ -131,3 +131,8 @@ fromString input =
 
     else
         Maybe.map (Tuple.pair True) (UInt64.fromString input)
+
+
+isZero : Int64 -> Bool
+isZero ( s, v ) =
+    UInt64.isZero v
