@@ -248,6 +248,7 @@ view layer icfp =
                         (Element.html
                             (Html.div
                                 [ Html.Attributes.style "white-space" "pre-wrap"
+                                , Html.Attributes.style "font-family" "monospace"
                                 ]
                                 rendered
                             )
