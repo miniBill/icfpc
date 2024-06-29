@@ -107,9 +107,15 @@ viewResponse { response, solution } =
 
         Response res ->
             let
-                common : List (Element msg)
+                common : List (Element FrontendMsg)
                 common =
-                    [ paragraph [ Border.width 1, Theme.padding ] [ text res ]
+                    [ Input.multiline []
+                        { text = res
+                        , placeholder = Nothing
+                        , onChange = ChangedResponse
+                        , spellcheck = False
+                        , label = Input.labelHidden "Response"
+                        }
                     ]
 
                 specific : List (Element FrontendMsg)
@@ -163,6 +169,9 @@ update msg model =
     case msg of
         Input input ->
             ( { model | input = input }, Cmd.none )
+
+        ChangedResponse response ->
+            ( { model | response = Response response }, Cmd.none )
 
         Send message ->
             ( { model

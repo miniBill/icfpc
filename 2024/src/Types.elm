@@ -26,6 +26,7 @@ type FrontendMsg
     | StepReduceResponse
     | FullyReduceResponse
     | Solve
+    | ChangedResponse String
 
 
 type ToBackend
