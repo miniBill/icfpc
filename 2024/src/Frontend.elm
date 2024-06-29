@@ -1,7 +1,7 @@
 module Frontend exposing (app)
 
 import Browser
-import Element exposing (Element, el, fill, padding, paragraph, rgb, row, text, width)
+import Element exposing (Element, el, fill, paragraph, rgb, row, text, width)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Input as Input

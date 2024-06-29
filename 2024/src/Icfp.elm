@@ -1,7 +1,7 @@
 module Icfp exposing (Binary(..), Icfp(..), Unary(..), decodeInt, decodeString, edit, encodeInt, encodeString, parse, toString, view)
 
 import Dict exposing (Dict)
-import Element exposing (Attribute, Color, Element, alignTop, column, el, fill, padding, paragraph, rgb, row, spacing, text, width, wrappedRow)
+import Element exposing (Attribute, Color, Element, alignTop, column, el, fill, paragraph, rgb, spacing, text, width, wrappedRow)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Input as Input
