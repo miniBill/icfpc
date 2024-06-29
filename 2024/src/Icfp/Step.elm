@@ -134,7 +134,19 @@ step icfp =
                 _ ->
                     Ternary (step c) t f
 
-        _ ->
+        Bool _ ->
+            icfp
+
+        Int _ ->
+            icfp
+
+        String _ ->
+            icfp
+
+        Variable _ ->
+            icfp
+
+        Lambda _ _ ->
             icfp
 
 
