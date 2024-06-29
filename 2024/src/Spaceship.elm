@@ -14,7 +14,7 @@ solve input response =
             (Result.andThen
                 (\( level, coords ) ->
                     coords
-                        |> trySolve 1000 ( 0, 0 ) ( 0, 0 ) []
+                        |> trySolve 100000 ( 0, 0 ) ( 0, 0 ) []
                         |> Result.map
                             (\moves ->
                                 "solve spaceship" ++ String.fromInt level ++ " " ++ String.concat (List.map String.fromInt moves)
@@ -123,7 +123,7 @@ trySolve budget ( x, y ) ( vx, vy ) moves coords =
                                     -(sign speed)
 
                                 else
-                                    sign (target - position)
+                                    sign (target - (position + speed))
 
                             newSpeed : Int
                             newSpeed =
