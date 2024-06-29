@@ -1,4 +1,4 @@
-module Spaceship exposing (solve, trySolve)
+module Spaceship exposing (solve)
 
 import Icfp exposing (Icfp)
 import List.Extra
