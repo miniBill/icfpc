@@ -5,21 +5,26 @@ import List.Extra
 import Result.Extra
 
 
-solve : String -> Icfp -> Result String String
+solve : String -> Icfp -> Maybe (Result String String)
 solve input response =
-    Result.map2 Tuple.pair
+    Maybe.map2 (Result.map2 Tuple.pair)
         (getLevel input)
         (getCoords response)
-        |> andThenOnSecond parseCoords
-        |> andThenOnSecond (trySolve ( 0, 0 ) ( 0, 0 ) [])
-        |> Result.map
-            (\( level, moves ) ->
-                "solve spaceship" ++ String.fromInt level ++ " " ++ String.concat (List.map String.fromInt moves)
+        |> Maybe.map
+            (Result.andThen
+                (\( level, coords ) ->
+                    coords
+                        |> trySolve ( 0, 0 ) ( 0, 0 ) []
+                        |> Result.map
+                            (\moves ->
+                                "solve spaceship" ++ String.fromInt level ++ " " ++ String.concat (List.map String.fromInt moves)
+                            )
+                )
             )
-        |> Debug.log "spaceshipButton"
+        |> Debug.log "Spaceship.solve"
 
 
-getLevel : String -> Result String Int
+getLevel : String -> Maybe (Result String Int)
 getLevel input =
     Icfp.parse input
         |> Result.mapError Debug.toString
@@ -49,31 +54,19 @@ getLevel input =
                     Nothing ->
                         Err (levelString ++ " is not a valid int")
             )
+        |> Just
 
 
-getCoords : Icfp -> Result String String
+getCoords : Icfp -> Maybe (Result String (List ( Int, Int )))
 getCoords response =
     case response of
         Icfp.String coords ->
-            Ok coords
+            coords
+                |> parseCoords
+                |> Just
 
         _ ->
-            Err "response is not a string"
-
-
-andThenOnSecond : (s -> Result e t) -> Result e ( f, s ) -> Result e ( f, t )
-andThenOnSecond t v =
-    case v of
-        Err e ->
-            Err e
-
-        Ok ( f, s ) ->
-            case t s of
-                Ok ss ->
-                    Ok ( f, ss )
-
-                Err e ->
-                    Err e
+            Just (Err "response is not a string")
 
 
 parseCoords : String -> Result String (List ( Int, Int ))
@@ -153,18 +146,3 @@ trySolve ( x, y ) ( vx, vy ) moves coords =
                  else
                     coords
                 )
-
-
-foldlCombine : (v -> acc -> Result e acc) -> acc -> List v -> Result e acc
-foldlCombine f acc list =
-    case list of
-        [] ->
-            Ok acc
-
-        head :: tail ->
-            case f head acc of
-                Ok v ->
-                    foldlCombine f v tail
-
-                next ->
-                    next

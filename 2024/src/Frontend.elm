@@ -207,7 +207,7 @@ update msg model =
                 Response response ->
                     case Icfp.parse response of
                         Ok icfp ->
-                            ( { model | solution = Just (Spaceship.solve model.input icfp) }
+                            ( { model | solution = Spaceship.solve model.input icfp }
                             , Cmd.none
                             )
 
