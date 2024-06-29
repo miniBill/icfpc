@@ -1,7 +1,7 @@
-module Step exposing (applyTest, intToString, modulo, stringToInt)
+module Step exposing (applyTest, division, intToString, modulo, stringToInt)
 
 import Expect
-import Icfp exposing (Icfp(..))
+import Icfp exposing (Binary(..), Icfp(..), Unary(..))
 import Icfp.Step
 import Int64
 import Test exposing (Test, describe, test)
@@ -19,6 +19,17 @@ modulo =
         ]
 
 
+division : Test
+division =
+    stepTestEE "Division"
+        (Binary
+            Division
+            (Unary Negation (Int (Int64.fromInt 3)))
+            (Int (Int64.fromInt 2))
+        )
+        (Unary Negation (Int (Int64.fromInt 1)))
+
+
 stringToInt : Test
 stringToInt =
     stepTestE "String to int" "U# S4%34" (Int (Int64.fromInt 15818151))
@@ -27,6 +38,11 @@ stringToInt =
 intToString : Test
 intToString =
     stepTestE "Int to string" "U$I4%34" (String "test")
+
+
+stepTestEE : String -> Icfp -> Icfp -> Test
+stepTestEE label from to =
+    stepTest label (Icfp.toString from) (Icfp.toString to)
 
 
 stepTestE : String -> String -> Icfp -> Test
