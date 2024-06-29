@@ -1,7 +1,7 @@
-module Step exposing (applyTest, modulo, stringToInt)
+module Step exposing (applyTest, intToString, modulo, stringToInt)
 
 import Expect
-import Icfp
+import Icfp exposing (Icfp(..))
 import Icfp.Step
 import Test exposing (Test, describe, test)
 
@@ -17,7 +17,17 @@ modulo =
 
 stringToInt : Test
 stringToInt =
-    stepTest "String to int" "U# S4%34" ("I" ++ Icfp.encodeInt 15818151)
+    stepTestE "String to int" "U# S4%34" (Int 15818151)
+
+
+intToString : Test
+intToString =
+    stepTestE "Int to string" "U$I4%34" (String "test")
+
+
+stepTestE : String -> String -> Icfp -> Test
+stepTestE label from to =
+    stepTest label from (Icfp.toString to)
 
 
 stepTest : String -> String -> String -> Test
