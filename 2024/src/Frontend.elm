@@ -1,7 +1,7 @@
 module Frontend exposing (app)
 
 import Browser
-import Element exposing (Element, el, fill, paragraph, rgb, row, text, width)
+import Element exposing (Element, alignRight, el, fill, paragraph, rgb, row, text, width)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Input as Input
@@ -135,12 +135,14 @@ viewResponse { response, solution } =
                                             []
 
                                         Just (Ok sol) ->
-                                            [ text "Solution"
+                                            [ row [ width fill, Theme.spacing ]
+                                                [ text "Solution"
+                                                , Theme.button [ alignRight ]
+                                                    { onPress = Just (Send (Icfp.toString <| Icfp.String sol))
+                                                    , label = text "Send"
+                                                    }
+                                                ]
                                             , paragraph [] [ text sol ]
-                                            , Theme.button []
-                                                { onPress = Just (Send (Icfp.toString <| Icfp.String sol))
-                                                , label = text "Send"
-                                                }
                                             ]
 
                                         Just (Err err) ->
