@@ -70,7 +70,7 @@ view model =
             Ok _ ->
                 Theme.button []
                     { label = text "Send"
-                    , onPress = Just Send
+                    , onPress = Just (Send model.input)
                     }
 
             Err _ ->
@@ -137,6 +137,10 @@ viewResponse { response, solution } =
                                         Just (Ok sol) ->
                                             [ text "Solution"
                                             , paragraph [] [ text sol ]
+                                            , Theme.button []
+                                                { onPress = Just (Send (Icfp.toString <| Icfp.String sol))
+                                                , label = text "Send"
+                                                }
                                             ]
 
                                         Just (Err err) ->
@@ -158,8 +162,13 @@ update msg model =
         Input input ->
             ( { model | input = input }, Cmd.none )
 
-        Send ->
-            ( { model | response = Asking, solution = Nothing }, Lamdera.sendToBackend (TB model.input) )
+        Send message ->
+            ( { model
+                | response = Asking
+                , solution = Nothing
+              }
+            , Lamdera.sendToBackend (TB message)
+            )
 
         StepReduceResponse ->
             case model.response of
@@ -198,13 +207,19 @@ update msg model =
                 Response response ->
                     case Icfp.parse response of
                         Ok icfp ->
-                            ( { model | solution = Just (Spaceship.solve model.input icfp) }, Cmd.none )
+                            ( { model | solution = Just (Spaceship.solve model.input icfp) }
+                            , Cmd.none
+                            )
 
                         Err _ ->
-                            ( { model | solution = Just (Err "Can't solve: response is invalid") }, Cmd.none )
+                            ( { model | solution = Just (Err "Can't solve: response is invalid") }
+                            , Cmd.none
+                            )
 
                 _ ->
-                    ( { model | solution = Just (Err "Can't solve: no response") }, Cmd.none )
+                    ( { model | solution = Just (Err "Can't solve: no response") }
+                    , Cmd.none
+                    )
 
 
 updateFromBackend : ToFrontend -> FrontendModel -> ( FrontendModel, Cmd msg )

@@ -20,7 +20,7 @@ type Response
 
 type FrontendMsg
     = Input String
-    | Send
+    | Send String
     | OnUrlChange Lamdera.Url
     | OnUrlRequest Lamdera.UrlRequest
     | StepReduceResponse

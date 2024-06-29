@@ -11,7 +11,7 @@ solve input response =
         (getLevel input)
         (getCoords response)
         |> andThenOnSecond parseCoords
-        |> andThenOnSecond trySolve
+        |> andThenOnSecond (trySolve ( 0, 0 ) ( 0, 0 ) [])
         |> Result.map
             (\( level, moves ) ->
                 "solve spaceship" ++ String.fromInt level ++ " " ++ String.concat (List.map String.fromInt moves)
@@ -97,55 +97,62 @@ parseCoords input =
         |> Result.Extra.combineMap parsePair
 
 
-trySolve : List ( Int, Int ) -> Result String (List Int)
-trySolve coords =
-    coords
-        |> foldlCombine
-            (\( tx, ty ) ( ( x, y ), ( vx, vy ), moves ) ->
-                let
-                    go : Int -> Int -> Int -> ( Int, Int, Int )
-                    go position speed target =
-                        let
-                            unaccellerated : Int
-                            unaccellerated =
-                                position + speed
+trySolve : ( Int, Int ) -> ( Int, Int ) -> List Int -> List ( Int, Int ) -> Result String (List Int)
+trySolve ( x, y ) ( vx, vy ) moves coords =
+    case coords of
+        [] ->
+            Ok (List.reverse moves)
 
-                            accel : Int
-                            accel =
-                                case compare target unaccellerated of
-                                    LT ->
-                                        -1
+        ( tx, ty ) :: tail ->
+            let
+                go : Int -> Int -> Int -> ( Int, Int, Int )
+                go position speed target =
+                    let
+                        unaccellerated : Int
+                        unaccellerated =
+                            position + speed
 
-                                    EQ ->
-                                        0
+                        accel : Int
+                        accel =
+                            case compare target unaccellerated of
+                                LT ->
+                                    -1
 
-                                    GT ->
-                                        1
+                                EQ ->
+                                    0
 
-                            newSpeed : Int
-                            newSpeed =
-                                speed + accel
+                                GT ->
+                                    1
 
-                            newPosition : Int
-                            newPosition =
-                                position + newSpeed
-                        in
-                        ( newPosition, newSpeed, accel )
+                        newSpeed : Int
+                        newSpeed =
+                            speed + accel
 
-                    ( nx, nvx, ax ) =
-                        go x vx tx
+                        newPosition : Int
+                        newPosition =
+                            position + newSpeed
+                    in
+                    ( newPosition, newSpeed, accel )
 
-                    ( ny, nvy, ay ) =
-                        go y vy ty
+                ( nx, nvx, ax ) =
+                    go x vx tx
 
-                    move : Int
-                    move =
-                        ay * 3 + ax + 5
-                in
-                Ok ( ( nx, ny ), ( nvx, nvy ), move :: moves )
-            )
-            ( ( 0, 0 ), ( 0, 0 ), [] )
-        |> Result.map (\( _, _, moves ) -> moves)
+                ( ny, nvy, ay ) =
+                    go y vy ty
+
+                move : Int
+                move =
+                    ay * 3 + ax + 5
+            in
+            trySolve ( nx, ny )
+                ( nvx, nvy )
+                (move :: moves)
+                (if nx == tx && ny == ty then
+                    tail
+
+                 else
+                    coords
+                )
 
 
 foldlCombine : (v -> acc -> Result e acc) -> acc -> List v -> Result e acc
