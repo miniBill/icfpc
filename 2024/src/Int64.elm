@@ -49,12 +49,12 @@ sub l r =
 
 mul : Int64 -> Int64 -> Int64
 mul ( sl, l ) ( sr, r ) =
-    ( xor sl sr, UInt64.mul l r )
+    ( sl == sr, UInt64.mul l r )
 
 
 div : Int64 -> Int64 -> Int64
 div ( sl, l ) ( sr, r ) =
-    ( xor sl sr, UInt64.div l r )
+    ( sl == sr, UInt64.div l r )
 
 
 remainderBy : Int64 -> Int64 -> Int64
