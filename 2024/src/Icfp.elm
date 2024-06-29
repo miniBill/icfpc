@@ -5,6 +5,10 @@ import Element exposing (Attribute, Color, Element, alignTop, column, el, fill, 
 import Element.Background as Background
 import Element.Border as Border
 import Element.Input as Input
+import Html
+import Html.Attributes
+import Markdown.Parser
+import Markdown.Renderer
 import Parser exposing ((|.), (|=), Parser)
 import Parser.Workaround
 import Theme
@@ -222,16 +226,44 @@ view : Int -> Icfp -> Element msg
 view layer icfp =
     case icfp of
         String s ->
-            s
-                |> String.split "\n"
-                |> List.map (\line -> paragraph [] [ text line ])
-                |> column
-                    [ Border.width 1
-                    , Theme.padding
-                    , width fill
-                    , alignTop
-                    , layerBackground layer
-                    ]
+            case
+                s
+                    |> Markdown.Parser.parse
+                    |> Result.mapError Debug.toString
+                    |> Result.andThen
+                        (\parsed ->
+                            parsed
+                                |> Markdown.Renderer.render
+                                    Markdown.Renderer.defaultHtmlRenderer
+                        )
+            of
+                Ok rendered ->
+                    el
+                        [ Border.width 1
+                        , Theme.padding
+                        , width fill
+                        , alignTop
+                        , layerBackground layer
+                        ]
+                        (Element.html
+                            (Html.div
+                                [ Html.Attributes.style "white-space" "pre-wrap"
+                                ]
+                                rendered
+                            )
+                        )
+
+                Err _ ->
+                    s
+                        |> String.split "\n"
+                        |> List.map (\line -> paragraph [] [ text line ])
+                        |> column
+                            [ Border.width 1
+                            , Theme.padding
+                            , width fill
+                            , alignTop
+                            , layerBackground layer
+                            ]
 
         Bool True ->
             el [ alignTop ] <| text "True"
