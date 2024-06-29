@@ -5,9 +5,12 @@ import Element exposing (Element, el, fill, paragraph, rgb, row, text, width)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Input as Input
-import Icfp
+import Icfp exposing (Icfp)
 import Icfp.Step
 import Lamdera
+import List.Extra
+import Result.Extra
+import Spaceship
 import Theme
 import Types exposing (FrontendModel, FrontendMsg(..), Response(..), ToBackend(..), ToFrontend(..))
 
@@ -41,6 +44,7 @@ init : url -> key -> ( FrontendModel, Cmd msg )
 init _ _ =
     ( { input = "S'%4}).$%8"
       , response = NotAsked
+      , spaceship = Nothing
       }
     , Cmd.none
     )
@@ -75,7 +79,7 @@ view model =
                 Element.none
         , text "Response"
         ]
-            ++ viewResponse model.response
+            ++ viewResponse model
 
 
 viewError : String -> Element msg
@@ -88,8 +92,8 @@ viewError err =
         [ text err ]
 
 
-viewResponse : Response -> List (Element FrontendMsg)
-viewResponse response =
+viewResponse : FrontendModel -> List (Element FrontendMsg)
+viewResponse { input, response, spaceship } =
     case response of
         Error e ->
             [ viewError (Debug.toString e)
@@ -123,7 +127,16 @@ viewResponse response =
                                     { onPress = Just FullyReduceResponse
                                     , label = text "Reduce (full)"
                                     }
+                                , spaceshipButton input icfp
                                 ]
+                            , case spaceship of
+                                Nothing ->
+                                    Element.none
+
+                                Just ( level, moves ) ->
+                                    paragraph []
+                                        [ text <| "solve spaceship" ++ String.fromInt level ++ " " ++ moves
+                                        ]
                             , Icfp.view 0 icfp
                             ]
 
@@ -131,6 +144,99 @@ viewResponse response =
                             [ viewError (Debug.toString e) ]
             in
             common ++ specific
+
+
+spaceshipButton : String -> Icfp -> Element FrontendMsg
+spaceshipButton input response =
+    Icfp.parse input
+        |> Result.mapError Debug.toString
+        |> Result.andThen
+            (\parsedInput ->
+                case parsedInput of
+                    Icfp.String inputString ->
+                        Ok inputString
+
+                    _ ->
+                        Err "Input is not a string"
+            )
+        |> Result.andThen
+            (\inputString ->
+                if String.startsWith "get spaceship" inputString then
+                    Ok (String.dropLeft (String.length "get spaceship") inputString)
+
+                else
+                    Err "Input string does not start with `get spaceship`"
+            )
+        |> Result.andThen
+            (\levelString ->
+                case String.toInt levelString of
+                    Just level ->
+                        Ok level
+
+                    Nothing ->
+                        Err (levelString ++ " is not a valid int")
+            )
+        |> Result.andThen
+            (\level ->
+                case response of
+                    Icfp.String coords ->
+                        Ok ( level, coords )
+
+                    _ ->
+                        Err "response is not a string"
+            )
+        |> andThenOnSecond parseSpaceshipCoords
+        |> andThenOnSecond Spaceship.trySolve
+        |> Debug.log "spaceshipButton"
+        |> Result.map
+            (\( level, moves ) ->
+                Theme.button []
+                    { onPress =
+                        moves
+                            |> List.map String.fromInt
+                            |> String.concat
+                            |> SolveSpaceship level
+                            |> Just
+                    , label = text "Solve spaceship"
+                    }
+            )
+        |> Result.withDefault Element.none
+
+
+andThenOnSecond : (s -> Result e t) -> Result e ( f, s ) -> Result e ( f, t )
+andThenOnSecond t v =
+    case v of
+        Err e ->
+            Err e
+
+        Ok ( f, s ) ->
+            case t s of
+                Ok ss ->
+                    Ok ( f, ss )
+
+                Err e ->
+                    Err e
+
+
+parseSpaceshipCoords : String -> Result String (List ( Int, Int ))
+parseSpaceshipCoords input =
+    let
+        parsePair : String -> Result String ( Int, Int )
+        parsePair line =
+            case String.split " " line of
+                [ l, r ] ->
+                    Result.map2
+                        Tuple.pair
+                        (Result.fromMaybe ("Bad int: " ++ l) (String.toInt l))
+                        (Result.fromMaybe ("Bad int: " ++ r) (String.toInt r))
+
+                _ ->
+                    Err <| "Wrong number of numbers on line " ++ line
+    in
+    input
+        |> String.split "\n"
+        |> List.Extra.removeWhen String.isEmpty
+        |> Result.Extra.combineMap parsePair
 
 
 update : FrontendMsg -> FrontendModel -> ( FrontendModel, Cmd FrontendMsg )
@@ -173,6 +279,9 @@ update msg model =
 
         OnUrlRequest _ ->
             ( model, Cmd.none )
+
+        SolveSpaceship level moves ->
+            ( { model | spaceship = Just ( level, moves ) }, Cmd.none )
 
 
 updateFromBackend : ToFrontend -> FrontendModel -> ( FrontendModel, Cmd msg )

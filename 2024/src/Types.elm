@@ -7,6 +7,7 @@ import Lamdera exposing (ClientId)
 type alias FrontendModel =
     { input : String
     , response : Response
+    , spaceship : Maybe ( Int, String )
     }
 
 
@@ -24,6 +25,7 @@ type FrontendMsg
     | OnUrlRequest Lamdera.UrlRequest
     | StepReduceResponse
     | FullyReduceResponse
+    | SolveSpaceship Int String
 
 
 type ToBackend
