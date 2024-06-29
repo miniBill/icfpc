@@ -48,7 +48,9 @@ type Binary
     | Concat
     | Take
     | Drop
-    | Apply
+    | CallByName
+    | CallLazy
+    | CallStrict
 
 
 parse : String -> Result (List Parser.DeadEnd) Icfp
@@ -132,7 +134,9 @@ binaryOperationParser =
         , Parser.succeed Concat |. Parser.symbol "."
         , Parser.succeed Take |. Parser.symbol "T"
         , Parser.succeed Drop |. Parser.symbol "D"
-        , Parser.succeed Apply |. Parser.symbol "$"
+        , Parser.succeed CallByName |. Parser.symbol "$"
+        , Parser.succeed CallLazy |. Parser.symbol "~"
+        , Parser.succeed CallStrict |. Parser.symbol "!"
         ]
 
 
@@ -353,8 +357,14 @@ binaryToString binary =
         Drop ->
             "D"
 
-        Apply ->
+        CallByName ->
             "$"
+
+        CallLazy ->
+            "~"
+
+        CallStrict ->
+            "!"
 
 
 boxxxy : Int -> String -> List Icfp -> Element msg

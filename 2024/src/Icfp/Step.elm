@@ -88,7 +88,13 @@ step icfp =
                                 Nothing ->
                                     binary Bool (==) string string
 
-                Apply ->
+                CallByName ->
+                    binary identity replace lambda Just
+
+                CallStrict ->
+                    binary identity replace lambda reduced
+
+                CallLazy ->
                     binary identity replace lambda Just
 
                 Drop ->
@@ -233,6 +239,15 @@ step icfp =
 
         Lambda _ _ ->
             icfp
+
+
+reduced : Icfp -> Maybe Icfp
+reduced icfp =
+    if step icfp == icfp then
+        Just icfp
+
+    else
+        Nothing
 
 
 lambda : Icfp -> Maybe ( UInt64, Icfp )

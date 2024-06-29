@@ -1,4 +1,4 @@
-module Int64 exposing (Int64, add, div, fromInt, fromString, isZero, lessThan, moreThan, mul, negate, remainderBy, sub, toInt53, toString, zero)
+module Int64 exposing (Int64, add, div, fromInt, fromString, lessThan, moreThan, mul, negate, remainderBy, sub, toInt53, toString, zero)
 
 import UInt64 exposing (UInt64)
 
