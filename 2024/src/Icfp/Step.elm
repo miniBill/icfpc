@@ -224,6 +224,14 @@ reduce icfp =
                 child
 
             else
-                go (budget - 1) (step child)
+                let
+                    next =
+                        step child
+                in
+                if next == child then
+                    child
+
+                else
+                    go (budget - 1) next
     in
     go 1000000 icfp
