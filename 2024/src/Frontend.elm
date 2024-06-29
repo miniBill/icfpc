@@ -6,7 +6,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Input as Input
 import Icfp
-import Icfp.Step
+import Icfp.Step as Step
 import Lamdera
 import Problems.Spaceship
 import Theme
@@ -132,8 +132,8 @@ viewResponse { response, solution } =
                                     , label = text "Reduce (100)"
                                     }
                                 , Theme.button []
-                                    { onPress = Just FullyReduceResponse
-                                    , label = text "Reduce (full)"
+                                    { onPress = Just (StepReduceResponse Step.defaultBudget)
+                                    , label = text <| "Reduce (" ++ String.fromInt Step.defaultBudget ++ ")"
                                     }
                                 , Theme.button []
                                     { onPress = Just Solve
@@ -190,20 +190,7 @@ update msg model =
                 Response raw ->
                     case Icfp.parse raw of
                         Ok icfp ->
-                            ( { model | response = Response (Icfp.toString <| Icfp.Step.reduceWithBudget budget icfp) }, Cmd.none )
-
-                        Err _ ->
-                            ( model, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
-        FullyReduceResponse ->
-            case model.response of
-                Response raw ->
-                    case Icfp.parse raw of
-                        Ok icfp ->
-                            ( { model | response = Response (Icfp.toString <| Icfp.Step.reduce icfp) }, Cmd.none )
+                            ( { model | response = Response (Icfp.toString <| Step.reduceWithBudget budget icfp) }, Cmd.none )
 
                         Err _ ->
                             ( model, Cmd.none )

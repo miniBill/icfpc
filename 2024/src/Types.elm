@@ -24,7 +24,6 @@ type FrontendMsg
     | OnUrlChange Lamdera.Url
     | OnUrlRequest Lamdera.UrlRequest
     | StepReduceResponse Int
-    | FullyReduceResponse
     | Solve
     | ChangedResponse String
 

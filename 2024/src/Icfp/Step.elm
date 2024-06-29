@@ -1,4 +1,4 @@
-module Icfp.Step exposing (reduce, reduceWithBudget, step)
+module Icfp.Step exposing (defaultBudget, reduce, reduceWithBudget, step)
 
 import Icfp exposing (Binary(..), Icfp(..), Unary(..), decodeInt, decodeString, encodeInt, encodeString)
 import Int64 exposing (Int64)
@@ -330,7 +330,12 @@ replace ( var, expr ) val =
 
 reduce : Icfp -> Icfp
 reduce icfp =
-    reduceWithBudget 1000000 icfp
+    reduceWithBudget defaultBudget icfp
+
+
+defaultBudget : number
+defaultBudget =
+    1000000
 
 
 reduceWithBudget : Int -> Icfp -> Icfp
