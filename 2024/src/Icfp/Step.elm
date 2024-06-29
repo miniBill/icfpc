@@ -225,6 +225,7 @@ reduce icfp =
 
             else
                 let
+                    next : Icfp
                     next =
                         step child
                 in
