@@ -1,4 +1,4 @@
-module Icfp.Step exposing (reduce, step)
+module Icfp.Step exposing (reduce, reduceWithBudget, step)
 
 import Icfp exposing (Binary(..), Icfp(..), Unary(..), decodeInt, decodeString, encodeInt, encodeString)
 import Int64 exposing (Int64)
@@ -315,21 +315,22 @@ replace ( var, expr ) val =
 
 reduce : Icfp -> Icfp
 reduce icfp =
-    let
-        go budget child =
-            if budget <= 0 then
-                child
+    reduceWithBudget 1000000 icfp
 
-            else
-                let
-                    next : Icfp
-                    next =
-                        step child
-                in
-                if next == child then
-                    child
 
-                else
-                    go (budget - 1) next
-    in
-    go 1000000 icfp
+reduceWithBudget : Int -> Icfp -> Icfp
+reduceWithBudget budget child =
+    if budget <= 0 then
+        child
+
+    else
+        let
+            next : Icfp
+            next =
+                step child
+        in
+        if next == child then
+            child
+
+        else
+            reduceWithBudget (budget - 1) next

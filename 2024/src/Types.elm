@@ -23,7 +23,7 @@ type FrontendMsg
     | Send String
     | OnUrlChange Lamdera.Url
     | OnUrlRequest Lamdera.UrlRequest
-    | StepReduceResponse
+    | StepReduceResponse Int
     | FullyReduceResponse
     | Solve
     | ChangedResponse String

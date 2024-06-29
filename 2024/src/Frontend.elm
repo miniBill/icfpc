@@ -124,8 +124,12 @@ viewResponse { response, solution } =
                         Ok icfp ->
                             row [ Theme.spacing, width fill ]
                                 [ Theme.button []
-                                    { onPress = Just StepReduceResponse
+                                    { onPress = Just (StepReduceResponse 1)
                                     , label = text "Reduce (step)"
+                                    }
+                                , Theme.button []
+                                    { onPress = Just (StepReduceResponse 100)
+                                    , label = text "Reduce (100)"
                                     }
                                 , Theme.button []
                                     { onPress = Just FullyReduceResponse
@@ -181,12 +185,12 @@ update msg model =
             , Lamdera.sendToBackend (TB message)
             )
 
-        StepReduceResponse ->
+        StepReduceResponse budget ->
             case model.response of
                 Response raw ->
                     case Icfp.parse raw of
                         Ok icfp ->
-                            ( { model | response = Response (Icfp.toString <| Icfp.Step.step icfp) }, Cmd.none )
+                            ( { model | response = Response (Icfp.toString <| Icfp.Step.reduceWithBudget budget icfp) }, Cmd.none )
 
                         Err _ ->
                             ( model, Cmd.none )
