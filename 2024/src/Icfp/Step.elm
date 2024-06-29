@@ -143,7 +143,12 @@ step icfp =
                             Binary Or (step l) r
 
                 Addition ->
-                    binary Int Int64.add int int
+                    case ( l, r ) of
+                        ( Int li, Binary Addition (Int mi) rr ) ->
+                            Binary Addition (Int (Int64.add li mi)) rr
+
+                        _ ->
+                            binary Int Int64.add int int
 
                 Subtraction ->
                     binary Int Int64.sub int int
