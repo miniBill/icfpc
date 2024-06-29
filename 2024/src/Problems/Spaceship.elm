@@ -1,14 +1,15 @@
-module Spaceship exposing (solve)
+module Problems.Spaceship exposing (solve)
 
 import Icfp exposing (Icfp)
 import List.Extra
+import Problems.Common as Common
 import Result.Extra
 
 
 solve : String -> Icfp -> Maybe (Result String String)
 solve input response =
     Maybe.map2 (Result.map2 Tuple.pair)
-        (getLevel input)
+        (Common.getLevel "spaceship" input)
         (getCoords response)
         |> Maybe.map
             (Result.andThen
@@ -22,39 +23,6 @@ solve input response =
                 )
             )
         |> Debug.log "Spaceship.solve"
-
-
-getLevel : String -> Maybe (Result String Int)
-getLevel input =
-    Icfp.parse input
-        |> Result.mapError Debug.toString
-        |> Result.andThen
-            (\parsedInput ->
-                case parsedInput of
-                    Icfp.String inputString ->
-                        Ok inputString
-
-                    _ ->
-                        Err "Input is not a string"
-            )
-        |> Result.andThen
-            (\inputString ->
-                if String.startsWith "get spaceship" inputString then
-                    Ok (String.dropLeft (String.length "get spaceship") inputString)
-
-                else
-                    Err "Input string does not start with `get spaceship`"
-            )
-        |> Result.andThen
-            (\levelString ->
-                case String.toInt levelString of
-                    Just level ->
-                        Ok level
-
-                    Nothing ->
-                        Err (levelString ++ " is not a valid int")
-            )
-        |> Just
 
 
 getCoords : Icfp -> Maybe (Result String (List ( Int, Int )))

@@ -8,7 +8,7 @@ import Element.Input as Input
 import Icfp
 import Icfp.Step
 import Lamdera
-import Spaceship
+import Problems.Spaceship
 import Theme
 import Types exposing (FrontendModel, FrontendMsg(..), Response(..), ToBackend(..), ToFrontend(..))
 
@@ -209,7 +209,7 @@ update msg model =
                 Response response ->
                     case Icfp.parse response of
                         Ok icfp ->
-                            ( { model | solution = Spaceship.solve model.input icfp }
+                            ( { model | solution = Problems.Spaceship.solve model.input icfp }
                             , Cmd.none
                             )
 
