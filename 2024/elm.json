@@ -19,6 +19,7 @@
             "elmcraft/core-extra": "2.0.0",
             "lamdera/codecs": "1.0.0",
             "lamdera/core": "1.0.0",
+            "mdgriffith/elm-codegen": "4.2.2",
             "mdgriffith/elm-ui": "1.1.8",
             "pithub/elm-parser-bug-workaround": "1.0.0"
         },
@@ -27,8 +28,13 @@
             "elm/regex": "1.0.0",
             "elm/time": "1.0.0",
             "elm/virtual-dom": "1.0.3",
+            "elm-community/basics-extra": "4.1.0",
+            "miniBill/elm-unicode": "1.1.1",
             "pithub/elm-parser-extra": "1.0.0",
-            "rtfeldman/elm-hex": "1.0.0"
+            "rtfeldman/elm-hex": "1.0.0",
+            "stil4m/elm-syntax": "7.3.2",
+            "stil4m/structured-writer": "1.0.3",
+            "the-sett/elm-pretty-printer": "3.1.0"
         }
     },
     "test-dependencies": {

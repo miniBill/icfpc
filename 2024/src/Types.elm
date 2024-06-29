@@ -26,6 +26,7 @@ type FrontendMsg
     | StepReduceResponse Int
     | Solve
     | ChangedResponse String
+    | ToElm
 
 
 type ToBackend

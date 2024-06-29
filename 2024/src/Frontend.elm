@@ -7,6 +7,7 @@ import Element.Border as Border
 import Element.Input as Input
 import Icfp
 import Icfp.Step as Step
+import Icfp.ToElm
 import Lamdera
 import Problems.Spaceship
 import Theme
@@ -139,6 +140,10 @@ viewResponse { response, solution } =
                                     { onPress = Just Solve
                                     , label = text "Solve"
                                     }
+                                , Theme.button []
+                                    { onPress = Just ToElm
+                                    , label = text "To Elm"
+                                    }
                                 ]
                                 :: (case solution of
                                         Nothing ->
@@ -220,6 +225,25 @@ update msg model =
 
                 _ ->
                     ( { model | solution = Just (Err "Can't solve: no response") }
+                    , Cmd.none
+                    )
+
+        ToElm ->
+            case model.response of
+                Response response ->
+                    case Icfp.parse response of
+                        Ok icfp ->
+                            ( { model | solution = Just (Ok (Icfp.ToElm.toElm icfp)) }
+                            , Cmd.none
+                            )
+
+                        Err _ ->
+                            ( { model | solution = Just (Err "Can't convert to Elm: response is invalid") }
+                            , Cmd.none
+                            )
+
+                _ ->
+                    ( { model | solution = Just (Err "Can't convert to Elm: no response") }
                     , Cmd.none
                     )
 
