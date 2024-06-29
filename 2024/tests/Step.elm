@@ -3,21 +3,25 @@ module Step exposing (applyTest, intToString, modulo, stringToInt)
 import Expect
 import Icfp exposing (Icfp(..))
 import Icfp.Step
+import Int64
 import Test exposing (Test, describe, test)
 
 
 modulo : Test
 modulo =
-    test "% (-3) 2 == -1" <|
-        \_ ->
-            -3
-                |> remainderBy 2
-                |> Expect.equal -1
+    describe "modulo"
+        [ test "% (-3) 2 == -1" <|
+            \_ ->
+                -3
+                    |> remainderBy 2
+                    |> Expect.equal -1
+        , stepTestE "Modulo" "B% U- I$ I#" (Int (Int64.fromInt -1))
+        ]
 
 
 stringToInt : Test
 stringToInt =
-    stepTestE "String to int" "U# S4%34" (Int 15818151)
+    stepTestE "String to int" "U# S4%34" (Int (Int64.fromInt 15818151))
 
 
 intToString : Test
@@ -39,10 +43,18 @@ stepTest label from to =
                     Expect.fail "Failed to parse"
 
                 Ok icfp ->
-                    icfp
-                        |> Debug.log "parsed as"
-                        |> Icfp.Step.step
-                        |> Debug.log "stepped as "
+                    let
+                        _ =
+                            Debug.log ("parsed as: " ++ Icfp.toString icfp) icfp
+
+                        stepped =
+                            icfp
+                                |> Icfp.Step.step
+
+                        _ =
+                            Debug.log ("stepped as: " ++ Icfp.toString stepped) stepped
+                    in
+                    stepped
                         |> Icfp.toString
                         |> Expect.equal to
 

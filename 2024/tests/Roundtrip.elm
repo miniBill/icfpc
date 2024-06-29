@@ -4,6 +4,7 @@ import Expect
 import Fuzz
 import Icfp
 import Test exposing (Test, describe, fuzz, test)
+import UInt64
 
 
 int : Test
@@ -13,10 +14,10 @@ int =
             \_ ->
                 "/6"
                     |> Icfp.decodeInt
-                    |> Expect.equal 1337
+                    |> Expect.equal (UInt64.fromInt 1337)
         , test "encodes" <|
             \_ ->
-                1337
+                UInt64.fromInt 1337
                     |> Icfp.encodeInt
                     |> Expect.equal "/6"
         ]
@@ -24,7 +25,7 @@ int =
 
 intRoundtrip : Test
 intRoundtrip =
-    fuzz (Fuzz.intAtLeast 0) "Int roundtrips" <|
+    fuzz (Fuzz.map UInt64.fromInt <| Fuzz.intAtLeast 0) "Int roundtrips" <|
         \i ->
             i
                 |> Icfp.encodeInt

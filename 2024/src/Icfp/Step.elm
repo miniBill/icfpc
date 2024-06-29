@@ -1,6 +1,8 @@
 module Icfp.Step exposing (reduce, step)
 
 import Icfp exposing (Binary(..), Icfp(..), Unary(..), decodeInt, decodeString, encodeInt, encodeString)
+import Int64 exposing (Int64)
+import UInt64 exposing (UInt64)
 
 
 step : Icfp -> Icfp
@@ -21,13 +23,31 @@ step icfp =
                     unary Bool not bool
 
                 Negation ->
-                    unary never never (\_ -> Nothing)
+                    unary Int Int64.negate int
 
                 IntToString ->
-                    unary String (encodeInt >> decodeString) int
+                    unary String
+                        (\( s, i ) ->
+                            if s then
+                                i
+                                    |> encodeInt
+                                    |> decodeString
+
+                            else
+                                Debug.todo "IntToString on a negative number"
+                        )
+                        int
 
                 StringToInt ->
-                    unary Int (encodeString >> decodeInt) string
+                    unary Int
+                        (\s ->
+                            ( True
+                            , s
+                                |> encodeString
+                                |> decodeInt
+                            )
+                        )
+                        string
 
         Binary op l r ->
             let
@@ -72,10 +92,30 @@ step icfp =
                     binary identity replace lambda Just
 
                 Drop ->
-                    binary String String.dropLeft int string
+                    binary String
+                        (\i ->
+                            case Int64.toInt53 i of
+                                Just ii ->
+                                    String.dropLeft ii
+
+                                Nothing ->
+                                    Debug.todo "Number too big for Drop"
+                        )
+                        int
+                        string
 
                 Take ->
-                    binary String String.left int string
+                    binary String
+                        (\i ->
+                            case Int64.toInt53 i of
+                                Just ii ->
+                                    String.left ii
+
+                                Nothing ->
+                                    Debug.todo "Number too big for Take"
+                        )
+                        int
+                        string
 
                 Concat ->
                     binary String (++) string string
@@ -103,25 +143,25 @@ step icfp =
                             Binary Or (step l) r
 
                 Addition ->
-                    binary Int (+) int int
+                    binary Int Int64.add int int
 
                 Subtraction ->
-                    binary Int (-) int int
+                    binary Int Int64.sub int int
 
                 Multiplication ->
-                    binary Int (*) int int
+                    binary Int Int64.mul int int
 
                 Division ->
-                    binary Int (//) int int
+                    binary Int Int64.div int int
 
                 Modulo ->
-                    binary Int (\lv rv -> lv |> remainderBy rv) int int
+                    binary Int (\lv rv -> lv |> Int64.remainderBy rv) int int
 
                 LessThan ->
-                    binary Bool (<) int int
+                    binary Bool Int64.lessThan int int
 
                 GreaterThan ->
-                    binary Bool (>) int int
+                    binary Bool Int64.moreThan int int
 
         Ternary c t f ->
             case c of
@@ -150,7 +190,7 @@ step icfp =
             icfp
 
 
-lambda : Icfp -> Maybe ( Int, Icfp )
+lambda : Icfp -> Maybe ( UInt64, Icfp )
 lambda icfp =
     case icfp of
         Lambda v b ->
@@ -160,14 +200,14 @@ lambda icfp =
             Nothing
 
 
-int : Icfp -> Maybe Int
+int : Icfp -> Maybe Int64
 int icfp =
     case icfp of
         Int i ->
             Just i
 
         Unary Negation (Int i) ->
-            Just -i
+            Just (Int64.negate i)
 
         _ ->
             Nothing
@@ -193,7 +233,7 @@ bool icfp =
             Nothing
 
 
-replace : ( Int, Icfp ) -> Icfp -> Icfp
+replace : ( UInt64, Icfp ) -> Icfp -> Icfp
 replace ( var, expr ) val =
     let
         go : Icfp -> Icfp

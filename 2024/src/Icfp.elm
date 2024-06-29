@@ -7,22 +7,24 @@ import Element.Border as Border
 import Element.Input as Input
 import Html
 import Html.Attributes
+import Int64 exposing (Int64)
 import Markdown.Parser
 import Markdown.Renderer
 import Parser exposing ((|.), (|=), Parser)
 import Parser.Workaround
 import Theme
+import UInt64 exposing (UInt64)
 
 
 type Icfp
     = Bool Bool
-    | Int Int
+    | Int Int64
     | String String
     | Unary Unary Icfp
     | Binary Binary Icfp Icfp
     | Ternary Icfp Icfp Icfp
-    | Variable Int
-    | Lambda Int Icfp
+    | Variable UInt64
+    | Lambda UInt64 Icfp
 
 
 type Unary
@@ -159,12 +161,12 @@ booleanParser =
 
 integerParser : Parser Icfp
 integerParser =
-    Parser.succeed Int
+    Parser.succeed (\v -> Int ( True, v ))
         |. Parser.symbol "I"
         |= innerIntegerParser
 
 
-innerIntegerParser : Parser Int
+innerIntegerParser : Parser UInt64
 innerIntegerParser =
     Parser.Workaround.chompUntilEndOrBefore " "
         |> Parser.getChompedString
@@ -199,12 +201,14 @@ innerToString icfp =
         Bool False ->
             [ "F" ]
 
-        Int int ->
-            if int < 0 then
-                innerToString (Unary Negation (Int -int))
+        Int ( s, int ) ->
+            if s then
+                [ "I" ++ encodeInt int ]
 
             else
-                [ "I" ++ encodeInt int ]
+                [ "U" ++ unaryToString Negation
+                , "I" ++ encodeInt int
+                ]
 
         Unary op c ->
             ("U" ++ unaryToString op) :: innerToString c
@@ -273,7 +277,7 @@ view layer icfp =
             el [ alignTop ] <| text "False"
 
         Int i ->
-            el [ alignTop ] <| text <| String.fromInt i
+            el [ alignTop ] <| text <| Int64.toString i
 
         Unary op c ->
             boxxxy layer (unaryToString op) [ c ]
@@ -284,20 +288,8 @@ view layer icfp =
         Ternary c t f ->
             boxxxy layer "?" [ c, t, f ]
 
-        Variable 0 ->
-            el [ alignTop ] <| text "x"
-
-        Variable 1 ->
-            el [ alignTop ] <| text "y"
-
-        Variable 2 ->
-            el [ alignTop ] <| text "z"
-
-        Variable 3 ->
-            el [ alignTop ] <| text "w"
-
         Variable i ->
-            el [ alignTop ] <| text <| "v" ++ String.fromInt i
+            el [ alignTop ] <| text <| "v" ++ UInt64.toString i
 
         Lambda v b ->
             boxxxy layer "Lambda" [ Variable v, b ]
@@ -443,9 +435,9 @@ edit icfp =
                         , alignTop
                         ]
                         { label = Input.labelHidden "Int"
-                        , text = String.fromInt i
+                        , text = Int64.toString i
                         , placeholder = Nothing
-                        , onChange = \newInt -> Int (Maybe.withDefault i (String.toInt newInt))
+                        , onChange = \newInt -> Int (Maybe.withDefault i (Int64.fromString newInt))
                         }
                         |> wrap
 
@@ -476,18 +468,18 @@ edit icfp =
                         , alignTop
                         ]
                         { label = Input.labelHidden "Variable"
-                        , text = String.fromInt v
+                        , text = UInt64.toString v
                         , placeholder = Nothing
-                        , onChange = \newInt -> Variable (Maybe.withDefault v (String.toInt newInt))
+                        , onChange = \newInt -> Variable (Maybe.withDefault v (UInt64.fromString newInt))
                         }
                         |> wrap
 
                 Lambda v b ->
                     Theme.row []
                         [ Input.text [ alignTop ]
-                            { text = String.fromInt v
+                            { text = UInt64.toString v
                             , placeholder = Nothing
-                            , onChange = \newV -> Lambda (Maybe.withDefault v <| String.toInt newV) b
+                            , onChange = \newV -> Lambda (Maybe.withDefault v <| UInt64.fromString newV) b
                             , label = Input.labelHidden "Variable"
                             }
                         , edit b
@@ -517,15 +509,19 @@ edit icfp =
 toKindOptions : Icfp -> List (Input.Option Icfp Icfp)
 toKindOptions icfp =
     let
+        zero : Icfp
+        zero =
+            Int Int64.zero
+
         default =
             { bool = Bool True
-            , int = Int 0
+            , int = zero
             , string = String ""
             , unary = Unary Negation icfp
-            , binary = Binary Equals icfp (Int 0)
-            , ternary = Ternary icfp (Int 0) (Int 0)
-            , variable = Variable 0
-            , lambda = Lambda 0 icfp
+            , binary = Binary Equals icfp zero
+            , ternary = Ternary icfp zero zero
+            , variable = Variable UInt64.zero
+            , lambda = Lambda UInt64.zero icfp
             }
 
         options =
@@ -569,23 +565,39 @@ toKindOptions icfp =
 {- INT -}
 
 
-decodeInt : String -> Int
+ninetyFour : UInt64
+ninetyFour =
+    UInt64.fromInt 94
+
+
+decodeInt : String -> UInt64
 decodeInt s =
     s
         |> String.toList
-        |> List.foldl (\c acc -> acc * 94 + (Char.toCode c - 33)) 0
+        |> List.foldl
+            (\c acc ->
+                UInt64.mul acc ninetyFour
+                    |> UInt64.add (UInt64.fromInt <| Char.toCode c - 33)
+            )
+            UInt64.zero
 
 
-encodeInt : Int -> String
+encodeInt : UInt64 -> String
 encodeInt i =
     let
-        go : Int -> List Char -> String
+        go : UInt64 -> List Char -> String
         go rest acc =
-            if rest == 0 then
+            if UInt64.isZero rest then
                 String.fromList acc
 
             else
-                go (rest // 94) (Char.fromCode (33 + modBy 94 rest) :: acc)
+                let
+                    ( div, mod ) =
+                        UInt64.divMod rest ninetyFour
+                in
+                go
+                    div
+                    (Char.fromCode (33 + Maybe.withDefault 0 (UInt64.toInt31 mod)) :: acc)
     in
     go i []
 
