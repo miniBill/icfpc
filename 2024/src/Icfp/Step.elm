@@ -1,4 +1,4 @@
-module Icfp.Step exposing (defaultBudget, reduce, reduceWithBudget, step)
+module Icfp.Step exposing (defaultBudget, reduceWithBudget, step)
 
 import Icfp exposing (Binary(..), Icfp(..), Unary(..), decodeInt, decodeString, encodeInt, encodeString)
 import Int64 exposing (Int64)
@@ -326,11 +326,6 @@ replace ( var, expr ) val =
                     child
     in
     go expr
-
-
-reduce : Icfp -> Icfp
-reduce icfp =
-    reduceWithBudget defaultBudget icfp
 
 
 defaultBudget : number
