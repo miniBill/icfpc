@@ -17,7 +17,7 @@ solve input response =
                         |> trySolve 10000000
                         |> Result.map
                             (\moves ->
-                                "solve lambdaman" ++ String.fromInt level ++ " " ++ moves
+                                "solve lambdaman" ++ String.fromInt level ++ " " ++ String.fromList moves
                             )
                 )
             )
@@ -56,7 +56,7 @@ parseGrid input =
         |> Array.fromList
 
 
-trySolve : Int -> Grid -> Result String String
+trySolve : Int -> Grid -> Result String (List Char)
 trySolve budget grid =
     if budget < 0 then
         Err <| "Out of budget:\n" ++ viewGrid grid
