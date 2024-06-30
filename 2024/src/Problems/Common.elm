@@ -16,21 +16,36 @@ getLevel prefix input =
                     _ ->
                         Err "Input is not a string"
             )
-        |> Result.andThen
+        |> Result.map
             (\inputString ->
                 if String.startsWith ("get " ++ prefix) inputString then
-                    Ok <| String.dropLeft (4 + String.length prefix) inputString
+                    Just <| String.dropLeft (4 + String.length prefix) inputString
 
                 else
-                    Err <| "Input string does not start with `get " ++ prefix
+                    Nothing
             )
-        |> Result.andThen
-            (\levelString ->
-                case String.toInt levelString of
-                    Just level ->
-                        Ok level
+        |> transpose
+        |> Maybe.map
+            (Result.andThen
+                (\levelString ->
+                    case String.toInt levelString of
+                        Just level ->
+                            Ok level
 
-                    Nothing ->
-                        Err (levelString ++ " is not a valid int")
+                        Nothing ->
+                            Err (levelString ++ " is not a valid int")
+                )
             )
-        |> Just
+
+
+transpose : Result e (Maybe v) -> Maybe (Result e v)
+transpose arg =
+    case arg of
+        Err e ->
+            Just (Err e)
+
+        Ok Nothing ->
+            Nothing
+
+        Ok (Just v) ->
+            Just (Ok v)

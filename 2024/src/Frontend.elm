@@ -9,6 +9,8 @@ import Icfp
 import Icfp.Step as Step
 import Icfp.ToElm
 import Lamdera
+import Maybe.Extra
+import Problems.Lambdaman
 import Problems.Spaceship
 import Theme
 import Types exposing (FrontendModel, FrontendMsg(..), Response(..), ToBackend(..), ToFrontend(..))
@@ -214,7 +216,11 @@ update msg model =
                 Response response ->
                     case Icfp.parse response of
                         Ok icfp ->
-                            ( { model | solution = Problems.Spaceship.solve model.input icfp }
+                            ( { model
+                                | solution =
+                                    Problems.Spaceship.solve model.input icfp
+                                        |> Maybe.Extra.orElseLazy (\_ -> Problems.Lambdaman.solve model.input icfp)
+                              }
                             , Cmd.none
                             )
 
