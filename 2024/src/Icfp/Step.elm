@@ -6,6 +6,245 @@ import String exposing (replace)
 import UInt64 exposing (UInt64)
 
 
+simpleStep : Icfp -> Icfp
+simpleStep icfp =
+    case icfp of
+        Unary op c ->
+            let
+                unary resCtor toRes cparser =
+                    case cparser c of
+                        Just cvalue ->
+                            resCtor <| toRes cvalue
+
+                        Nothing ->
+                            Unary op (simpleStep c)
+            in
+            case op of
+                Not ->
+                    unary Bool not bool
+
+                Negation ->
+                    unary Int Int64.negate int
+
+                IntToString ->
+                    unary String
+                        (\( s, i ) ->
+                            if s then
+                                i
+                                    |> encodeInt
+                                    |> decodeString
+
+                            else
+                                Debug.todo "IntToString on a negative number"
+                        )
+                        int
+
+                StringToInt ->
+                    unary Int
+                        (\s ->
+                            ( True
+                            , s
+                                |> encodeString
+                                |> decodeInt
+                            )
+                        )
+                        string
+
+        Binary op l r ->
+            let
+                doStep () =
+                    Binary op (simpleStep l) (simpleStep r)
+
+                binary resCtor toRes lparser rparser =
+                    case lparser l of
+                        Just lvalue ->
+                            case rparser r of
+                                Just rvalue ->
+                                    resCtor <| toRes lvalue rvalue
+
+                                Nothing ->
+                                    doStep ()
+
+                        Nothing ->
+                            doStep ()
+            in
+            case op of
+                Equals ->
+                    case int l of
+                        Just li ->
+                            case int r of
+                                Just ri ->
+                                    Bool (li == ri)
+
+                                _ ->
+                                    doStep ()
+
+                        Nothing ->
+                            case bool l of
+                                Just lb ->
+                                    case bool r of
+                                        Just rb ->
+                                            Bool (lb == rb)
+
+                                        Nothing ->
+                                            doStep ()
+
+                                Nothing ->
+                                    binary Bool (==) string string
+
+                CallByName ->
+                    doStep ()
+
+                CallStrict ->
+                    doStep ()
+
+                CallLazy ->
+                    doStep ()
+
+                Drop ->
+                    binary String
+                        (\i ->
+                            case Int64.toInt53 i of
+                                Just ii ->
+                                    String.dropLeft ii
+
+                                Nothing ->
+                                    Debug.todo "Number too big for Drop"
+                        )
+                        int
+                        string
+
+                Take ->
+                    binary String
+                        (\i ->
+                            case Int64.toInt53 i of
+                                Just ii ->
+                                    String.left ii
+
+                                Nothing ->
+                                    Debug.todo "Number too big for Take"
+                        )
+                        int
+                        string
+
+                Concat ->
+                    binary String (++) string string
+
+                And ->
+                    case l of
+                        Bool True ->
+                            r
+
+                        Bool False ->
+                            l
+
+                        _ ->
+                            doStep ()
+
+                Or ->
+                    case l of
+                        Bool True ->
+                            l
+
+                        Bool False ->
+                            r
+
+                        _ ->
+                            doStep ()
+
+                Addition ->
+                    case ( l, r ) of
+                        ( Int li, Binary Addition (Int mi) rr ) ->
+                            Binary Addition (Int (Int64.add li mi)) rr
+
+                        _ ->
+                            binary Int Int64.add int int
+
+                Subtraction ->
+                    binary Int Int64.sub int int
+
+                Multiplication ->
+                    case int l of
+                        Just v ->
+                            case Int64.toInt53 v of
+                                Just 0 ->
+                                    Int v
+
+                                Just 1 ->
+                                    r
+
+                                Just i ->
+                                    if i == -1 then
+                                        Unary Negation r
+
+                                    else
+                                        binary Int Int64.mul int int
+
+                                _ ->
+                                    binary Int Int64.mul int int
+
+                        Nothing ->
+                            case int r of
+                                Just v ->
+                                    case Int64.toInt53 v of
+                                        Just 0 ->
+                                            Int v
+
+                                        Just 1 ->
+                                            l
+
+                                        Just i ->
+                                            if i == -1 then
+                                                Unary Negation l
+
+                                            else
+                                                binary Int Int64.mul int int
+
+                                        _ ->
+                                            binary Int Int64.mul int int
+
+                                Nothing ->
+                                    binary Int Int64.mul int int
+
+                Division ->
+                    binary Int Int64.div int int
+
+                Modulo ->
+                    binary Int (\lv rv -> lv |> Int64.remainderBy rv) int int
+
+                LessThan ->
+                    binary Bool Int64.lessThan int int
+
+                GreaterThan ->
+                    binary Bool Int64.moreThan int int
+
+        Ternary c t f ->
+            case c of
+                Bool True ->
+                    t
+
+                Bool False ->
+                    f
+
+                _ ->
+                    Ternary (simpleStep c) (simpleStep t) (simpleStep f)
+
+        Bool _ ->
+            icfp
+
+        Int _ ->
+            icfp
+
+        String _ ->
+            icfp
+
+        Variable _ ->
+            icfp
+
+        Lambda v b ->
+            Lambda v (simpleStep b)
+
+
 step : Icfp -> Result UInt64 Icfp
 step icfp =
     case icfp of
@@ -382,13 +621,22 @@ reduceWithBudget budget child =
         child
 
     else
-        case step child of
-            Ok next ->
-                if next == child then
+        let
+            simple : Icfp
+            simple =
+                simpleStep child
+        in
+        if simple == child then
+            case step child of
+                Ok next ->
+                    if next == child then
+                        child
+
+                    else
+                        reduceWithBudget (budget - 1) next
+
+                Err _ ->
                     child
 
-                else
-                    reduceWithBudget (budget - 1) next
-
-            Err _ ->
-                child
+        else
+            reduceWithBudget (budget - 1) simple
