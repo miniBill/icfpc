@@ -1,7 +1,7 @@
 module Frontend exposing (app)
 
 import Browser
-import Element exposing (Element, alignRight, el, fill, paragraph, rgb, row, text, width)
+import Element exposing (Element, alignRight, column, el, fill, paragraph, rgb, row, text, width)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Input as Input
@@ -85,12 +85,14 @@ view model =
 
 viewError : String -> Element msg
 viewError err =
-    paragraph
-        [ Background.color <| rgb 1 0.8 0.8
-        , Border.width 1
-        , Theme.padding
-        ]
-        [ text err ]
+    err
+        |> String.split "\n"
+        |> List.map (\line -> paragraph [] [ text line ])
+        |> column
+            [ Background.color <| rgb 1 0.8 0.8
+            , Border.width 1
+            , Theme.padding
+            ]
 
 
 viewResponse : FrontendModel -> List (Element FrontendMsg)
