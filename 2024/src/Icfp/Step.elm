@@ -5,7 +5,7 @@ import Int64 exposing (Int64)
 import UInt64 exposing (UInt64)
 
 
-step : Icfp -> Icfp
+step : Icfp -> Result UInt64 Icfp
 step icfp =
     case icfp of
         Unary op c ->
@@ -13,10 +13,10 @@ step icfp =
                 unary resCtor toRes cparser =
                     case cparser c of
                         Just cvalue ->
-                            resCtor (toRes cvalue)
+                            Ok <| resCtor <| toRes cvalue
 
                         Nothing ->
-                            Unary op (step c)
+                            Result.map (Unary op) (step c)
             in
             case op of
                 Not ->
@@ -51,18 +51,34 @@ step icfp =
 
         Binary op l r ->
             let
+                stepLeft () =
+                    Result.map (\newL -> Binary op newL r) (step l)
+
+                stepRight () =
+                    Result.map (\newR -> Binary op l newR) (step r)
+
                 binary resCtor toRes lparser rparser =
                     case lparser l of
                         Just lvalue ->
                             case rparser r of
                                 Just rvalue ->
-                                    resCtor (toRes lvalue rvalue)
+                                    Ok <| resCtor <| toRes lvalue rvalue
 
                                 Nothing ->
-                                    Binary op l (step r)
+                                    case r of
+                                        Variable v ->
+                                            Err v
+
+                                        _ ->
+                                            stepRight ()
 
                         Nothing ->
-                            Binary op (step l) r
+                            case l of
+                                Variable v ->
+                                    Err v
+
+                                _ ->
+                                    stepLeft ()
             in
             case op of
                 Equals ->
@@ -70,20 +86,20 @@ step icfp =
                         Just li ->
                             case int r of
                                 Just ri ->
-                                    Bool (li == ri)
+                                    Ok (Bool (li == ri))
 
                                 _ ->
-                                    Binary Equals l (step r)
+                                    stepRight ()
 
                         Nothing ->
                             case bool l of
                                 Just lb ->
                                     case bool r of
                                         Just rb ->
-                                            Bool (lb == rb)
+                                            Ok (Bool (lb == rb))
 
                                         Nothing ->
-                                            Binary Equals l (step r)
+                                            stepRight ()
 
                                 Nothing ->
                                     binary Bool (==) string string
@@ -95,7 +111,21 @@ step icfp =
                     binary identity replace lambda reduced
 
                 CallLazy ->
-                    binary identity replace lambda Just
+                    case lambda l of
+                        Nothing ->
+                            stepLeft ()
+
+                        Just ( v, b ) ->
+                            case step b of
+                                Err missing ->
+                                    if v == missing then
+                                        stepRight ()
+
+                                    else
+                                        Err missing
+
+                                Ok newB ->
+                                    Ok (Binary CallLazy (Lambda v newB) r)
 
                 Drop ->
                     binary String
@@ -129,29 +159,29 @@ step icfp =
                 And ->
                     case l of
                         Bool True ->
-                            r
+                            Ok r
 
                         Bool False ->
-                            l
+                            Ok l
 
                         _ ->
-                            Binary And (step l) r
+                            stepLeft ()
 
                 Or ->
                     case l of
                         Bool True ->
-                            l
+                            Ok l
 
                         Bool False ->
-                            r
+                            Ok r
 
                         _ ->
-                            Binary Or (step l) r
+                            stepLeft ()
 
                 Addition ->
                     case ( l, r ) of
                         ( Int li, Binary Addition (Int mi) rr ) ->
-                            Binary Addition (Int (Int64.add li mi)) rr
+                            Ok (Binary Addition (Int (Int64.add li mi)) rr)
 
                         _ ->
                             binary Int Int64.add int int
@@ -164,14 +194,14 @@ step icfp =
                         Just v ->
                             case Int64.toInt53 v of
                                 Just 0 ->
-                                    Int v
+                                    Ok (Int v)
 
                                 Just 1 ->
-                                    r
+                                    Ok r
 
                                 Just i ->
                                     if i == -1 then
-                                        Unary Negation r
+                                        Ok (Unary Negation r)
 
                                     else
                                         binary Int Int64.mul int int
@@ -184,14 +214,14 @@ step icfp =
                                 Just v ->
                                     case Int64.toInt53 v of
                                         Just 0 ->
-                                            Int v
+                                            Ok (Int v)
 
                                         Just 1 ->
-                                            l
+                                            Ok l
 
                                         Just i ->
                                             if i == -1 then
-                                                Unary Negation l
+                                                Ok (Unary Negation l)
 
                                             else
                                                 binary Int Int64.mul int int
@@ -217,33 +247,33 @@ step icfp =
         Ternary c t f ->
             case c of
                 Bool True ->
-                    t
+                    Ok t
 
                 Bool False ->
-                    f
+                    Ok f
 
                 _ ->
-                    Ternary (step c) t f
+                    Result.map (\newC -> Ternary newC t f) (step c)
 
         Bool _ ->
-            icfp
+            Ok icfp
 
         Int _ ->
-            icfp
+            Ok icfp
 
         String _ ->
-            icfp
+            Ok icfp
 
-        Variable _ ->
-            icfp
+        Variable v ->
+            Err v
 
         Lambda _ _ ->
-            icfp
+            Ok icfp
 
 
 reduced : Icfp -> Maybe Icfp
 reduced icfp =
-    if step icfp == icfp then
+    if step icfp == Ok icfp then
         Just icfp
 
     else
@@ -339,13 +369,13 @@ reduceWithBudget budget child =
         child
 
     else
-        let
-            next : Icfp
-            next =
-                step child
-        in
-        if next == child then
-            child
+        case step child of
+            Ok next ->
+                if next == child then
+                    child
 
-        else
-            reduceWithBudget (budget - 1) next
+                else
+                    reduceWithBudget (budget - 1) next
+
+            Err _ ->
+                child
