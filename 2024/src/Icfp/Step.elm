@@ -2,6 +2,7 @@ module Icfp.Step exposing (defaultBudget, reduceWithBudget, step)
 
 import Icfp exposing (Binary(..), Icfp(..), Unary(..), decodeInt, decodeString, encodeInt, encodeString)
 import Int64 exposing (Int64)
+import String exposing (replace)
 import UInt64 exposing (UInt64)
 
 
@@ -119,13 +120,25 @@ step icfp =
                             case step b of
                                 Err missing ->
                                     if v == missing then
-                                        stepRight ()
+                                        step r
+                                            |> Result.map
+                                                (\newR ->
+                                                    if newR == r then
+                                                        replace ( v, b ) r
+
+                                                    else
+                                                        Binary CallLazy l newR
+                                                )
 
                                     else
                                         Err missing
 
                                 Ok newB ->
-                                    Ok (Binary CallLazy (Lambda v newB) r)
+                                    if newB == b then
+                                        Ok (replace ( v, b ) r)
+
+                                    else
+                                        Ok (Binary CallLazy (Lambda v newB) r)
 
                 Drop ->
                     binary String
