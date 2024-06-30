@@ -4,6 +4,7 @@ import Browser
 import Element exposing (Element, alignRight, column, el, fill, paragraph, rgb, row, text, width)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Font as Font
 import Element.Input as Input
 import Icfp
 import Icfp.Step as Step
@@ -92,6 +93,7 @@ viewError err =
             [ Background.color <| rgb 1 0.8 0.8
             , Border.width 1
             , Theme.padding
+            , Font.family [ Font.monospace ]
             ]
 
 
